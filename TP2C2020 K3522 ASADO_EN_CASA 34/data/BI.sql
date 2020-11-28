@@ -121,7 +121,7 @@ CREATE TABLE ASADO_EN_CASA.BI_rubro_autoparte (
 
 CREATE TABLE ASADO_EN_CASA.BI_autoparte (
     id_autoparte int identity primary key,
-	auto_parte_codigo decimal(18,0),
+	auto_parte_codigo decimal(18,2),
     precio_unitario int 
 )
 
@@ -188,7 +188,8 @@ CREATE TABLE ASADO_EN_CASA.BI_hechos_compras_autos (
 	foreign key (id_sucursal) references ASADO_EN_CASA.BI_sucursal,
 	--foreign key (id_fabricante) references ASADO_EN_CASA.BI_fabricante,
 	--foreign key (id_modelo) references ASADO_EN_CASA.BI_modelo,
-	cantidad_comprada int
+	cantidad_comprada int,
+	precio_compra decimal(18,2)
 )
 
 CREATE TABLE ASADO_EN_CASA.BI_hechos_ventas_autos (
@@ -201,18 +202,19 @@ CREATE TABLE ASADO_EN_CASA.BI_hechos_ventas_autos (
 	foreign key (id_sucursal) references ASADO_EN_CASA.BI_sucursal,
 	--foreign key (id_fabricante) references ASADO_EN_CASA.BI_fabricante,
 	--foreign key (id_modelo) references ASADO_EN_CASA.BI_modelo,
-	cantidad_vendida int
+	cantidad_vendida int,
+	precio_venta decimal(18,2)
 )
 
 
-INSERT INTO ASADO_EN_CASA.BI_hechos_compras_autos (id_tiempo, id_sucursal, cantidad_comprada)
-SELECT id_tiempo, id_sucursal, SUM(compra_cant)
+INSERT INTO ASADO_EN_CASA.BI_hechos_compras_autos (id_tiempo, id_sucursal, cantidad_comprada, precio_compra)
+SELECT id_tiempo, id_sucursal, SUM(compra_cant) --agregar
 FROM ASADO_EN_CASA.item_compra ic JOIN ASADO_EN_CASA.compras c ON ic.compra_nro = c.compra_nro
 LEFT JOIN ASADO_EN_CASA.BI_tiempo bt ON (bt.mes = MONTH(c.compra_fecha) and bt.anio = YEAR(c.compra_fecha))
 LEFT JOIN ASADO_EN_CASA.BI_sucursal bs ON (bs.sucursal_nro = c.sucursal_nro)
 GROUP BY id_tiempo, id_sucursal
 
-INSERT INTO ASADO_EN_CASA.BI_hechos_ventas_autos (id_tiempo, id_sucursal, cantidad_vendida)
+INSERT INTO ASADO_EN_CASA.BI_hechos_ventas_autos (id_tiempo, id_sucursal, cantidad_vendida) --agregar precio venta
 SELECT id_tiempo, id_sucursal, SUM(cant_facturada) cant_vend
 FROM ASADO_EN_CASA.item_factura i JOIN ASADO_EN_CASA.facturas f ON i.factura_nro = f.factura_nro
 LEFT JOIN ASADO_EN_CASA.BI_tiempo bt ON (bt.mes = MONTH(f.factura_fecha) and bt.anio = YEAR(f.factura_fecha))
@@ -223,6 +225,8 @@ GROUP BY id_tiempo, id_sucursal
 GO
 CREATE VIEW vista_BI
 AS
+
+--calcular mkfm
 SELECT t.anio, t.mes, s.sucursal_nro, cantidad_comprada, null
 FROM ASADO_EN_CASA.BI_hechos_compras_autos hc JOIN ASADO_EN_CASA.BI_tiempo t on (t.id_tiempo = hc.id_tiempo)
 JOIN ASADO_EN_CASA.BI_sucursal s on (s.id_sucursal = hc.id_sucursal)
